@@ -1,63 +1,61 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 
 namespace VendingMachine.Domain
 {
     public class MoneyInventory
     {
-        // property - dictionary keeps count for each cointype
+        // property - dictionary keeps count for each coin type
         public Dictionary<CoinType, int> Coins { get; private set; }
 
         // constructor - initializes dictionary 
         public MoneyInventory()
         {
-            // empty dictionary- each key(cointype) and value (int) saves new dictionary in property
+            // empty dictionary, each key (coin type) and value (int)
             Coins = new Dictionary<CoinType, int>();
 
-            // Ensuring coin types exists from start
+            // ensures all coin types exist from start
             Coins[CoinType.One] = 0;
             Coins[CoinType.Two] = 0;
             Coins[CoinType.Five] = 0;
             Coins[CoinType.Ten] = 0;
             Coins[CoinType.Twenty] = 0;
-
         }
 
-        // methods 
+        // method - add coins to inventory
         public void Add(CoinType type, int count)
-        {  // checks the number of coins is not negative
-            if (count < 0)
-            {   // if count is - it throws an exception for the invalid input
-                throw new ArgumentOutOfRangeException("count", "Count must be ≥ 0.");
-            }
-            // updates dictionary, takes current value of coin (type) and adds the new count. 
-            Coins[type] = Coins[type] + count;
-        }
-
-        // method for coin removal from inventory 
-        // samme princip som tidligere metode også
-        public void Remove(CoinType type, int count)
         {
+            // count cannot be negative
             if (count < 0)
             {
                 throw new ArgumentOutOfRangeException("count", "Count must be ≥ 0.");
             }
+            // update dictionary
+            Coins[type] = Coins[type] + count;
+        }
+
+        // method - remove coins from inventory
+        public void Remove(CoinType type, int count)
+        {
+            // count cannot be negative
+            if (count < 0)
+            {
+                throw new ArgumentOutOfRangeException("count", "Count must be ≥ 0.");
+            }
+            // check if enough coins exist
             if (Coins[type] < count)
             {
                 throw new InvalidOperationException("Not enough coins in inventory");
             }
+            // subtract from dictionary
             Coins[type] = Coins[type] - count;
-
         }
-        // Calculates total of all coins/moneeeyyyyy
+
+        // method - calculate total amount in DKK
         public int Total()
         {
             int sum = 0;
-            sum = sum + (Coins[CoinType.One]*1);
+            sum = sum + (Coins[CoinType.One] * 1);
             sum = sum + (Coins[CoinType.Two] * 2);
             sum = sum + (Coins[CoinType.Five] * 5);
             sum = sum + (Coins[CoinType.Ten] * 10);
@@ -65,70 +63,66 @@ namespace VendingMachine.Domain
             return sum;
         }
 
-        // checks possibility to give change back
+        // method - check if we can give correct change
         public bool CanMakeChange(int amount)
-        {   // if the requested amount is -, return false. 
+        {
+            // if negative, return false
             if (amount < 0)
             {
                 return false;
             }
-            // Defines coin values (largest to smallest).
-            int[] values = new int[] { 20, 10,5,2,1 };
 
-            // "pretending" to use coins without changing the real coins 
+            // coin values, largest to smallest
+            int[] values = new int[] { 20, 10, 5, 2, 1 };
+
+            // temporary copy of coin counts
             int[] tempCounts = new int[5];
-
-            // how many 20 kr do we have? and so on for the rest
-            tempCounts[0] = Coins[CoinType.Twenty]; 
+            tempCounts[0] = Coins[CoinType.Twenty];
             tempCounts[1] = Coins[CoinType.Ten];
             tempCounts[2] = Coins[CoinType.Five];
             tempCounts[3] = Coins[CoinType.Two];
             tempCounts[4] = Coins[CoinType.One];
 
-            // rest = how much change we might still need to cover
+            // rest is amount we still need to cover
             int rest = amount;
 
-            // always try biggest coin first -> greedy algorithm 
+            // greedy algorithm, use biggest coin first
             for (int i = 0; i < values.Length; i++)
             {
-                // Current coin value (20, 10, 5, 2, 1)
                 int denomValue = values[i];
-
-                // how many coins are available
                 int available = tempCounts[i];
-
-                // How many coins this type could be used the most?
                 int maxByValue = rest / denomValue;
 
-                // takes minimum of what we need and have
-                int use = maxByValue <available ? maxByValue : available;
+                // use minimum of what we need and what we have
+                int use = maxByValue < available ? maxByValue : available;
 
-                // Subtracts the value of the coins we used from the rest
+                // subtract from rest
                 rest = rest - (use * denomValue);
 
-                // updates temporary count
+                // update temporary count
                 tempCounts[i] = tempCounts[i] - use;
 
-                // if rest == 0, sucess ( amount covered)
+                // if nothing left, success
                 if (rest == 0)
                 {
                     return true;
                 }
             }
-            // After all coins have been tried, return true if rest is 0
+
+            // return true only if we covered all
             return rest == 0;
-
-
         }
 
+        // method - actually give change and update real inventory
         public Dictionary<CoinType, int> MakeChange(int amount)
         {
-            if (amount < 0) 
+            // amount cannot be negative
+            if (amount < 0)
             {
                 throw new ArgumentOutOfRangeException("amount", "Amount must be ≥ 0.");
             }
 
-            // Result dictionary to show how many coins were returned 
+            // result dictionary for coins we return
             Dictionary<CoinType, int> result = new Dictionary<CoinType, int>();
             result[CoinType.Twenty] = 0;
             result[CoinType.Ten] = 0;
@@ -136,14 +130,15 @@ namespace VendingMachine.Domain
             result[CoinType.Two] = 0;
             result[CoinType.One] = 0;
 
-            int[] values = new int[] {20, 10, 5, 2, 1 };
-
+            int[] values = new int[] { 20, 10, 5, 2, 1 };
             int rest = amount;
 
-            // Uses largest coins first 
+            // greedy algorithm
             for (int i = 0; i < values.Length; i++)
             {
                 int denomValue = values[i];
+
+                // map value to enum
                 CoinType denom =
                     denomValue == 20 ? CoinType.Twenty :
                     denomValue == 10 ? CoinType.Ten :
@@ -157,27 +152,30 @@ namespace VendingMachine.Domain
 
                 if (use > 0)
                 {
-                    // reduces real inventory
+                    // subtract from real inventory
                     Coins[denom] = Coins[denom] - use;
 
-                    // records given coins 
+                    // record returned coins
                     result[denom] = result[denom] + use;
 
+                    // subtract value from rest
                     rest = rest - (use * denomValue);
-
                 }
+
+                // if rest is 0, break out
                 if (rest == 0)
                 {
                     break;
                 }
-
             }
-            if (rest > 0) 
+
+            // if we still owe change, throw exception
+            if (rest > 0)
             {
                 throw new ChangeNotAvailableException("Cannot provide correct change.");
             }
+
             return result;
         }
     }
-
 }

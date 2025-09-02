@@ -13,6 +13,23 @@
         // our constructor 
         public ProductType(int id, string name, int baseprice, string category)
         {
+            if (id <= 0)
+            {
+                throw new ArgumentOutOfRangeException("id", "Id must be > 0.");
+            }
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                throw new ArgumentException("Name must not be empty.", "name");
+            }
+            if (baseprice < 0)
+            {
+                throw new ArgumentOutOfRangeException("basePrice", "Price must be ≥ 0.");
+            }
+            if (string.IsNullOrWhiteSpace(category))
+            {
+                throw new ArgumentException("Category must not be empty.", "category");
+            }
+
             Id = id;
             Name = name;
             BasePrice = baseprice;
@@ -24,7 +41,10 @@
         {
             return Name + " (" + BasePrice + " kr.)";
         }
-
+        public override string ToString()
+        {
+            return "ProductType { Id=" + Id + ", Name=" + Name + ", Price=" + BasePrice + " kr., Category=" + Category + " }";
+        }
     }
 
 
