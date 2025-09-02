@@ -6,7 +6,6 @@ namespace VendingMachine.Service
     using VendingMachine.Domain;
     using VendingMachine.Infrastructure;
 
-    // vending logic
     public class VendingService
     {
         // repositories 
@@ -277,11 +276,95 @@ namespace VendingMachine.Service
             inventory.Remove(coin, count);
         }
 
-        // method - admin: total cash inside the machine (DKK)
+        // method 
         public int GetMachineCashTotal()
         {
             MoneyInventory inventory = moneyRepositoryInstance.GetInventory();
             return inventory.Total();
         }
+        // method - admin: refill a slot to its full capacity, returns how many items were added
+        public int RefillSlotToCapacity(string slotCode)
+        {
+            if (string.IsNullOrWhiteSpace(slotCode))
+            {
+                throw new ArgumentException("Slot code must not be empty.", "slotCode");
+            }
+
+            Slot slot = slotRepositoryInstance.GetByCode(slotCode);
+            if (slot == null)
+            {
+                throw new ArgumentException("Slot not found.", "slotCode");
+            }
+
+            int added = slot.RefillToCapacity();
+            slotRepositoryInstance.Update(slot);
+            return added;
+        }
+
+        // method - admin refill all slots to capacity, returns total items added
+        public int RefillAllSlotsToCapacity()
+        {
+            List<Slot> allSlots = slotRepositoryInstance.GetAll();
+            int totalAdded = 0;
+
+            for (int slotIndex = 0; slotIndex < allSlots.Count; slotIndex = slotIndex + 1)
+            {
+                Slot slot = allSlots[slotIndex];
+                int added = slot.RefillToCapacity();
+                totalAdded = totalAdded + added;
+                slotRepositoryInstance.Update(slot);
+            }
+
+            return totalAdded;
+        }
+
+        // method - admin top up coin float to target levels (ensure minimum counts for each coin)
+        public void AdminTopUpCoinFloat(int targetTwenty, int targetTen, int targetFive, int targetTwo, int targetOne)
+        {
+            if (targetTwenty < 0 || targetTen < 0 || targetFive < 0 || targetTwo < 0 || targetOne < 0)
+            {
+                throw new ArgumentOutOfRangeException("Targets must be ≥ 0.");
+            }
+
+            MoneyInventory moneyInventory = moneyRepositoryInstance.GetInventory();
+
+            EnsureCoinLevel(moneyInventory, CoinType.Twenty, targetTwenty);
+            EnsureCoinLevel(moneyInventory, CoinType.Ten, targetTen);
+            EnsureCoinLevel(moneyInventory, CoinType.Five, targetFive);
+            EnsureCoinLevel(moneyInventory, CoinType.Two, targetTwo);
+            EnsureCoinLevel(moneyInventory, CoinType.One, targetOne);
+        }
+
+        // helper - make sure a coin count is at least target
+        private void EnsureCoinLevel(MoneyInventory moneyInventory, CoinType coinType, int targetCount)
+        {
+            int current = moneyInventory.Coins[coinType];
+            if (current < targetCount)
+            {
+                int missing = targetCount - current;
+                moneyInventory.Add(coinType, missing);
+            }
+        }
+        // method - admin empty all cash and return what was removed
+        public Dictionary<CoinType, int> AdminEmptyCash()
+        {
+            MoneyInventory inventory = moneyRepositoryInstance.GetInventory();
+
+            Dictionary<CoinType, int> removed = new Dictionary<CoinType, int>();
+            removed[CoinType.Twenty] = inventory.Coins[CoinType.Twenty];
+            removed[CoinType.Ten] = inventory.Coins[CoinType.Ten];
+            removed[CoinType.Five] = inventory.Coins[CoinType.Five];
+            removed[CoinType.Two] = inventory.Coins[CoinType.Two];
+            removed[CoinType.One] = inventory.Coins[CoinType.One];
+
+            if (removed[CoinType.Twenty] > 0) { inventory.Remove(CoinType.Twenty, removed[CoinType.Twenty]); }
+            if (removed[CoinType.Ten] > 0) { inventory.Remove(CoinType.Ten, removed[CoinType.Ten]); }
+            if (removed[CoinType.Five] > 0) { inventory.Remove(CoinType.Five, removed[CoinType.Five]); }
+            if (removed[CoinType.Two] > 0) { inventory.Remove(CoinType.Two, removed[CoinType.Two]); }
+            if (removed[CoinType.One] > 0) { inventory.Remove(CoinType.One, removed[CoinType.One]); }
+
+            return removed;
+        }
+
     }
 }
