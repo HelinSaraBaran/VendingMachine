@@ -68,7 +68,7 @@ internal class Program
             Console.WriteLine("4) Cancel and refund");
             Console.WriteLine("5) Show inserted amount");
             Console.WriteLine("9) Admin (refill/price/coins/total)");
-            Console.WriteLine("Tip: type a slot code (e.g., A1) or a product name (e.g., cola) here to buy directly");
+            Console.WriteLine("Tip: type a slot code (eks. A1) or a product name (eks. cola) here to buy directly");
             Console.WriteLine("0) Exit");
             Console.Write("Choose or type code/name: ");
             string userInput = Console.ReadLine();
